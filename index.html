@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F1EA">
+<title>Nachtzug</title>
+<style>
+:root{--font:"Helvetica Neue",Helvetica,Arial,"Liberation Sans",sans-serif}
+body[data-theme="hell"]{--page:#E6E1D4;--panel:#F4F1EA;--ink:#222;--muted:#6f6b60;--line:#cfc8b6;--sea:#F4F1EA;--land:#D9D0BB;--rail:#4d4d48;--ferry:#378ADD;--dot:#fff;--dotline:#222;--label:#222;--halo:#F4F1EA;--det:#E5383B;--detline:#222;--me:#1D9E75;--meline:#fff;--goal:#E0A100;--hint:#1D9E75;--tR:#6f6b60;--tI:#378ADD;--tN:#7C5CBF;--tS:#222;--tD:#1D9E75;--btn:#fff;--btnink:#222;--on:#1D9E75;--onink:#fff}
+body[data-theme="gelb"]{--page:#E9C530;--panel:#F5D33F;--ink:#111;--muted:#4a3f08;--line:#111;--sea:#F5D33F;--land:#EBC22A;--rail:#111;--ferry:#111;--dot:#FFFBE6;--dotline:#111;--label:#111;--halo:#F5D33F;--det:#C1121F;--detline:#111;--me:#111;--meline:#F5D33F;--goal:#111;--hint:#111;--tR:#111;--tI:#7a5a00;--tN:#5a2d00;--tS:#111;--tD:#111;--btn:#FFFBE6;--btnink:#111;--on:#111;--onink:#F5D33F}
+body[data-theme="nacht"]{--page:#0b0905;--panel:#14110A;--ink:#F5D33F;--muted:#a38e3a;--line:#3a3312;--sea:#14110A;--land:#25200f;--rail:#F5D33F;--ferry:#F5D33F;--dot:#14110A;--dotline:#F5D33F;--label:#F5D33F;--halo:#14110A;--det:#FF3B30;--detline:#fff;--me:#fff;--meline:#F5D33F;--goal:#fff;--hint:#fff;--tR:#F5D33F;--tI:#9FB8FF;--tN:#C9A5FF;--tS:#fff;--tD:#7BE3B0;--btn:#1c180c;--btnink:#F5D33F;--on:#F5D33F;--onink:#14110A}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);-webkit-text-size-adjust:100%}
+body{min-height:100vh;display:flex;justify-content:center}
+#app{width:100%;max-width:520px;background:var(--panel);display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid var(--on);outline-offset:2px}
+#hud{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px 6px}
+#rnd{font-size:20px;font-weight:700;letter-spacing:-.01em}
+#rnd small{font-size:13px;font-weight:400;color:var(--muted);margin-left:4px}
+#pips{display:flex;gap:5px;margin-top:3px}
+#pips i{width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);display:block}
+#pips i.pass{background:var(--ink)}
+#pips i.next{outline:2px solid var(--det);outline-offset:1px}
+#goal{text-align:right;font-size:13px;color:var(--muted);line-height:1.25}
+#goal b{display:block;font-size:17px;color:var(--ink)}
+#mapwrap{position:relative;background:var(--sea);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+#sv{display:block;width:100%;height:auto;max-height:56vh;touch-action:none;user-select:none;-webkit-user-select:none}
+#zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
+#zoom button{width:38px;height:38px;border-radius:8px;border:1.5px solid var(--ink);background:var(--btn);color:var(--btnink);font-size:19px;line-height:1;padding:0}
+#banner{position:absolute;left:0;right:0;top:12px;text-align:center;pointer-events:none;opacity:0;transition:opacity .25s}
+#banner span{display:inline-block;background:var(--ink);color:var(--panel);padding:7px 14px;border-radius:999px;font-weight:700;font-size:14px}
+#banner.show{opacity:1}
+#tickets{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:10px 10px 4px}
+.tk{position:relative;border:1.5px solid var(--ink);background:var(--btn);color:var(--btnink);border-radius:8px;padding:6px 3px 5px;text-align:center;min-height:62px;line-height:1.15}
+.tk b{display:block;font-size:12px}
+.tk .n{display:block;font-size:20px;font-weight:700;margin:1px 0}
+.tk small{display:block;font-size:11px;color:var(--muted)}
+.tk::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;border-radius:6px 6px 0 0;background:var(--c)}
+.tk[disabled]{opacity:.38;cursor:default}
+.tk.on{background:var(--on);color:var(--onink);border-color:var(--on)}
+.tk.on small{color:var(--onink)}
+#chips{display:flex;flex-wrap:wrap;gap:6px;padding:4px 10px 2px;min-height:38px}
+#chips button{border:1.5px solid var(--ink);background:var(--btn);color:var(--btnink);border-radius:999px;padding:6px 11px;font-size:14px;line-height:1.1}
+#chips button:active{background:var(--on);color:var(--onink)}
+#msg{padding:4px 14px 6px;font-size:14px;min-height:40px;line-height:1.35}
+#track{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;padding:2px 10px 6px}
+#track div{height:30px;border-radius:5px;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);position:relative}
+#track div.rev{border-color:var(--det)}
+#track div.cur{border-color:var(--ink)}
+#track div span{display:inline-block;padding:1px 3px;border-radius:3px;color:var(--panel);margin:0 1px;font-size:11px;background:var(--c)}
+#foot{display:flex;flex-wrap:wrap;gap:8px;padding:6px 10px 14px;justify-content:space-between}
+#foot .grp{display:flex;gap:6px}
+#foot button{border:1.5px solid var(--ink);background:var(--btn);color:var(--btnink);border-radius:8px;padding:7px 10px;font-size:13px}
+#foot button.on{background:var(--on);color:var(--onink);border-color:var(--on)}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:env(safe-area-inset-top) 12px 12px}
+#ov.hide{display:none}
+#card{margin-top:14px;width:100%;max-width:480px;background:var(--panel);border:2px solid var(--ink);border-radius:14px;padding:18px 18px 16px}
+#card h1{font-size:30px;margin:0 0 2px;letter-spacing:-.02em}
+#card h2{font-size:21px;margin:0 0 6px}
+#card p{margin:0 0 10px;line-height:1.42;font-size:15px}
+#card ul{margin:0 0 12px;padding-left:18px;font-size:14px;line-height:1.42}
+#card li{margin-bottom:5px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.row button{flex:1 1 0;min-width:96px;border:1.5px solid var(--ink);background:var(--btn);color:var(--btnink);border-radius:9px;padding:10px 8px;font-size:15px}
+.row button.on{background:var(--on);color:var(--onink);border-color:var(--on)}
+.row button.go{background:var(--ink);color:var(--panel);font-weight:700}
+.lab{font-size:13px;color:var(--muted);margin:10px 0 2px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;margin:4px 0 12px}
+.legend span{display:flex;align-items:center;gap:5px}
+@keyframes pulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(2.6);opacity:0}}
+.pulse{transform-box:fill-box;transform-origin:center;animation:pulse 1.7s ease-out infinite}
+.det{transition:transform .4s ease-in-out}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none;opacity:.5}.det{transition:none}#banner{transition:none}}
+</style>
+</head>
+<body data-theme="hell">
+<div id="app">
+  <div id="hud">
+    <div><div id="rnd">Runde 1<small>von 20</small></div><div id="pips" aria-label="Aufdeckungsrunden"></div></div>
+    <div id="goal">Ziel<b>–</b></div>
+  </div>
+  <div id="mapwrap">
+    <svg id="sv" viewBox="0 0 380 391" role="img" aria-label="Spielkarte"></svg>
+    <div id="zoom"><button id="zin" aria-label="Vergrößern">+</button><button id="zout" aria-label="Verkleinern">−</button><button id="zme" aria-label="Auf mich zentrieren">◎</button></div>
+    <div id="banner"><span></span></div>
+  </div>
+  <div id="tickets"></div>
+  <div id="chips"></div>
+  <div id="msg"></div>
+  <div id="track" aria-label="Fahrtenprotokoll"></div>
+  <div id="foot">
+    <div class="grp"><button id="bBel" aria-pressed="false">Verdacht zeigen</button></div>
+    <div class="grp" id="themes"><button data-th="hell">Hell</button><button data-th="gelb">Fahrplan</button><button data-th="nacht">Nacht</button></div>
+    <div class="grp"><button id="bMenu">Menü</button></div>
+  </div>
+</div>
+<div id="ov"><div id="card"></div></div>
+
+<script>
+const DATA={"names":{"lis":"Lissabon","por":"Porto","mad":"Madrid","sev":"Sevilla","val":"Valencia","bcn":"Barcelona","vig":"Vigo","ovi":"Oviedo","bil":"Bilbao","ist":"Istanbul","pal":"Palermo","nap":"Neapel","mes":"Messina","par":"Paris","nnt":"Nantes","bor":"Bordeaux","lyo":"Lyon","mar":"Marseille","bru":"Brüssel","ams":"Amsterdam","hh":"Hamburg","ber":"Berlin","fra":"Frankfurt","mun":"München","zur":"Zürich","gnu":"Genua","ven":"Venedig","rom":"Rom","bar":"Bari","wie":"Wien","pra":"Prag","bud":"Budapest","zag":"Zagreb","krk":"Krakau","bre":"Breslau","war":"Warschau","bel":"Belgrad","sof":"Sofia","buk":"Bukarest","clu":"Cluj","vil":"Vilnius","rig":"Riga","tll":"Tallinn","nar":"Narva","kld":"Kolding","kop":"Kopenhagen","got":"Göteborg","osl":"Oslo","sto":"Stockholm","sun":"Sundsvall","ume":"Umeå","lul":"Luleå","nvk":"Narvik","trd":"Trondheim","bod":"Bodø","brg":"Bergen","lon":"London","man":"Manchester","edi":"Edinburgh"},"st":[["lis","Lissabon",6,71,40,362,"start"],["por","",7,66,0,0,"start"],["mad","Madrid",15,67,78,330,"middle"],["sev","",11,74,0,0,"start"],["val","",21,70,0,0,"start"],["bcn","",25,65,0,0,"start"],["vig","Vigo",7,63,30,322,"end"],["ovi","",12,61,0,0,"start"],["bil","",17,61,0,0,"start"],["ist","Istanbul",71,66,354,348,"end"],["pal","Palermo",44,73,216,372,"end"],["nap","",46,66,0,0,"start"],["mes","",48,73,0,0,"start"],["par","Paris",26,48,128,234,"end"],["nnt","",19,52,0,0,"start"],["bor","",21,57,0,0,"start"],["lyo","",30,55,0,0,"start"],["mar","",31,61,0,0,"start"],["bru","",29,43,0,0,"start"],["ams","Amsterdam",30,40,152,194,"middle"],["hh","",39,37,0,0,"start"],["ber","Berlin",44,39,226,190,"start"],["fra","",36,45,0,0,"start"],["mun","",41,50,0,0,"start"],["zur","Zürich",36,51,176,262,"end"],["gnu","",37,58,0,0,"start"],["ven","",43,56,0,0,"start"],["rom","Rom",43,64,210,326,"end"],["bar","",50,66,0,0,"start"],["wie","",50,49,0,0,"start"],["pra","Prag",46,45,226,232,"end"],["bud","",54,51,0,0,"start"],["zag","",49,55,0,0,"start"],["krk","",56,45,0,0,"start"],["bre","",51,43,0,0,"start"],["war","Warschau",57,40,292,218,"start"],["bel","Belgrad",57,57,284,304,"end"],["sof","Sofia",61,62,314,316,"start"],["buk","Bukarest",66,58,332,284,"middle"],["clu","",62,53,0,0,"start"],["vil","Vilnius",65,34,320,176,"end"],["rig","Riga",63,29,324,152,"start"],["tll","Tallinn",64,24,322,114,"middle"],["nar","",70,24,0,0,"start"],["kld","",38,33,0,0,"start"],["kop","",43,32,0,0,"start"],["got","",42,28,0,0,"start"],["osl","Oslo",40,22,210,116,"start"],["sto","Stockholm",52,24,262,138,"middle"],["sun","",51,17,0,0,"start"],["ume","",56,13,0,0,"start"],["lul","",59,9,0,0,"start"],["nvk","Narvik",51,3,264,22,"start"],["trd","",39,14,0,0,"start"],["bod","",46,5,0,0,"start"],["brg","",31,21,0,0,"start"],["lon","London",21,42,100,216,"end"],["man","",18,37,0,0,"start"],["edi","Edinburgh",16,32,76,166,"end"]],"ed":[["N","lis","por","32.5,357.5 32.5,347.5 37.5,342.5 37.5,332.5"],["N","lis","mad","32.5,357.5 52.5,337.5 77.5,337.5"],["N","por","mad","37.5,332.5 42.5,327.5 67.5,327.5 77.5,337.5"],["N","mad","sev","77.5,337.5 57.5,357.5 57.5,372.5"],["N","mad","val","77.5,337.5 92.5,352.5 107.5,352.5"],["N","mad","bcn","77.5,337.5 92.5,322.5 122.5,322.5 127.5,327.5"],["N","val","bcn","107.5,352.5 107.5,342.5 122.5,327.5 127.5,327.5"],["N","bcn","mar","127.5,327.5 127.5,317.5 142.5,302.5 152.5,302.5 157.5,307.5"],["N","par","bru","132.5,242.5 147.5,227.5 147.5,217.5"],["N","par","nnt","132.5,242.5 117.5,242.5 97.5,262.5"],["N","par","bor","132.5,242.5 117.5,257.5 117.5,277.5 107.5,287.5"],["N","nnt","bor","97.5,262.5 107.5,272.5 107.5,287.5"],["N","par","lyo","132.5,242.5 132.5,257.5 152.5,277.5"],["N","lyo","mar","152.5,277.5 157.5,282.5 157.5,307.5"],["N","lyo","zur","152.5,277.5 172.5,257.5 182.5,257.5"],["N","lyo","gnu","152.5,277.5 172.5,277.5 187.5,292.5"],["N","gnu","mar","187.5,292.5 172.5,292.5 157.5,307.5"],["N","gnu","zur","187.5,292.5 187.5,262.5 182.5,257.5"],["N","gnu","rom","187.5,292.5 192.5,292.5 207.5,307.5 207.5,312.5 217.5,322.5"],["N","rom","ven","217.5,322.5 217.5,297.5 212.5,292.5 212.5,287.5 217.5,282.5"],["N","rom","bar","217.5,322.5 242.5,322.5 252.5,332.5"],["N","mun","ven","207.5,252.5 207.5,272.5 217.5,282.5"],["N","zag","ven","247.5,277.5 222.5,277.5 217.5,282.5"],["N","mun","zur","207.5,252.5 187.5,252.5 182.5,257.5"],["N","mun","wie","207.5,252.5 222.5,252.5 227.5,247.5 252.5,247.5"],["N","mun","pra","207.5,252.5 232.5,227.5"],["N","pra","wie","232.5,227.5 252.5,247.5"],["N","pra","ber","232.5,227.5 222.5,217.5 222.5,197.5"],["N","pra","bre","232.5,227.5 247.5,227.5 257.5,217.5"],["N","wie","bud","252.5,247.5 262.5,247.5 272.5,257.5"],["N","wie","zag","252.5,247.5 247.5,252.5 247.5,277.5"],["N","zag","bud","247.5,277.5 267.5,257.5 272.5,257.5"],["N","zag","bel","247.5,277.5 257.5,287.5 287.5,287.5"],["N","bud","bel","272.5,257.5 272.5,272.5 287.5,287.5"],["N","bud","clu","272.5,257.5 282.5,267.5 312.5,267.5"],["N","clu","buk","312.5,267.5 312.5,272.5 332.5,292.5"],["N","buk","sof","332.5,292.5 327.5,292.5 307.5,312.5"],["N","bel","sof","287.5,287.5 287.5,292.5 307.5,312.5"],["N","bud","krk","272.5,257.5 282.5,247.5 282.5,227.5"],["N","bre","krk","257.5,217.5 267.5,227.5 282.5,227.5"],["N","bre","war","257.5,217.5 272.5,217.5 287.5,202.5"],["N","krk","war","282.5,227.5 287.5,222.5 287.5,202.5"],["N","ber","bre","222.5,197.5 242.5,217.5 257.5,217.5"],["N","ber","war","222.5,197.5 282.5,197.5 287.5,202.5"],["N","ber","fra","222.5,197.5 212.5,197.5 182.5,227.5"],["N","ber","mun","222.5,197.5 207.5,212.5 207.5,252.5"],["N","hh","ber","197.5,187.5 212.5,187.5 222.5,197.5"],["N","hh","ams","197.5,187.5 187.5,197.5 157.5,197.5 152.5,202.5"],["N","ams","bru","152.5,202.5 147.5,207.5 147.5,217.5"],["N","bru","lon","147.5,217.5 112.5,217.5 107.5,212.5"],["N","lon","man","107.5,212.5 92.5,197.5 92.5,187.5"],["N","man","edi","92.5,187.5 82.5,177.5 82.5,162.5"],["N","lon","edi","107.5,212.5 107.5,187.5 82.5,162.5"],["N","kop","got","217.5,162.5 227.5,152.5 222.5,147.5 217.5,147.5 212.5,142.5"],["N","osl","sto","202.5,112.5 212.5,122.5 262.5,122.5"],["N","osl","got","202.5,112.5 202.5,117.5 212.5,127.5 212.5,142.5"],["N","sto","got","262.5,122.5 242.5,142.5 212.5,142.5"],["N","osl","trd","202.5,112.5 202.5,97.5 197.5,92.5 197.5,72.5"],["N","osl","brg","202.5,112.5 197.5,107.5 157.5,107.5"],["N","trd","sun","197.5,72.5 212.5,87.5 257.5,87.5"],["N","sun","sto","257.5,87.5 257.5,117.5 262.5,122.5"],["N","sun","ume","257.5,87.5 277.5,67.5 282.5,67.5"],["N","ume","lul","282.5,67.5 282.5,62.5 297.5,47.5"],["N","lul","nvk","297.5,47.5 287.5,47.5 257.5,17.5"],["N","trd","bod","197.5,72.5 232.5,37.5 232.5,27.5"],["N","war","vil","287.5,202.5 297.5,202.5 327.5,172.5"],["N","vil","rig","327.5,172.5 327.5,157.5 317.5,147.5"],["N","rig","tll","317.5,147.5 322.5,142.5 322.5,122.5"],["N","tll","nar","322.5,122.5 352.5,122.5"],["F","lon","ams","107.5,212.5 117.5,202.5 152.5,202.5"],["F","brg","edi","157.5,107.5 102.5,162.5 82.5,162.5"],["F","sto","tll","262.5,122.5 322.5,122.5"],["N","par","fra","132.5,242.5 167.5,242.5 182.5,227.5"],["N","bru","fra","147.5,217.5 157.5,227.5 182.5,227.5"],["N","ams","fra","152.5,202.5 157.5,202.5 182.5,227.5"],["N","hh","fra","197.5,187.5 197.5,197.5 182.5,212.5 182.5,227.5"],["N","fra","zur","182.5,227.5 182.5,257.5"],["N","fra","mun","182.5,227.5 207.5,252.5"],["N","kop","kld","217.5,162.5 212.5,167.5 192.5,167.5"],["N","kld","hh","192.5,167.5 192.5,182.5 197.5,187.5"],["F","gnu","bcn","187.5,292.5 152.5,327.5 127.5,327.5"],["N","por","vig","37.5,332.5 37.5,317.5"],["N","vig","ovi","37.5,317.5 47.5,307.5 62.5,307.5"],["N","ovi","bil","62.5,307.5 87.5,307.5"],["N","bil","mad","87.5,307.5 77.5,317.5 77.5,337.5"],["N","bil","bor","87.5,307.5 92.5,307.5 107.5,292.5 107.5,287.5"],["N","sof","ist","307.5,312.5 327.5,332.5 357.5,332.5"],["N","gnu","ven","187.5,292.5 197.5,282.5 217.5,282.5"],["N","rom","nap","217.5,322.5 222.5,327.5 227.5,327.5 232.5,332.5"],["N","nap","mes","232.5,332.5 252.5,352.5 252.5,357.5 242.5,367.5"],["N","mes","pal","242.5,367.5 222.5,367.5"]],"land":["0:53-75","1:51-75","2:47-49","2:51-75","3:48-75","4:48-75","5:46-75","6:46-75","7:45-75","8:44-75","9:43-59","9:64-75","10:43-58","10:65-75","11:41-58","11:64-75","12:40-58","12:63-75","13:39-57","13:62-75","14:36-55","14:60-75","15:35-53","15:59-75","16:33-52","16:58-75","17:10-10","17:31-51","17:58-75","18:30-51","18:59-75","19:31-51","19:59-75","20:31-51","20:59-75","21:31-52","21:59-69","21:71-75","22:31-53","22:61-63","22:72-75","23:31-53","23:70-75","24:31-39","24:41-52","24:62-75","25:31-37","25:41-51","25:60-60","25:62-75","26:13-16","26:32-36","26:41-50","26:60-60","26:63-75","27:10-10","27:13-15","27:42-50","27:64-75","28:12-18","28:39-39","28:42-50","28:53-53","28:59-60","28:64-75","29:12-17","29:37-39","29:43-49","29:58-61","29:63-75","30:12-17","30:36-39","30:45-50","30:58-75","31:12-16","31:36-39","31:45-48","31:58-75","32:14-18","32:36-38","32:41-43","32:45-45","32:58-75","33:14-18","33:37-42","33:58-75","34:7-10","34:13-19","34:37-38","34:41-42","34:56-75","35:8-10","35:12-12","35:16-20","35:37-39","35:44-44","35:50-53","35:55-75","36:5-10","36:17-21","36:37-40","36:42-45","36:47-75","37:5-11","37:17-21","37:34-75","38:6-11","38:14-22","38:31-75","39:6-11","39:15-24","39:30-75","40:5-10","40:15-24","40:30-75","41:5-8","41:13-23","41:29-75","42:15-23","42:28-75","43:14-23","43:25-75","44:14-15","44:25-75","45:13-13","45:24-75","46:19-19","46:22-75","47:19-75","48:16-16","48:19-75","49:14-75","50:14-75","51:17-75","52:18-75","53:19-75","54:20-73","55:20-73","56:20-43","56:45-72","57:20-42","57:47-72","58:20-42","58:48-70","59:20-35","59:39-43","59:48-70","60:8-9","60:11-11","60:19-34","60:40-44","60:49-70","61:6-27","61:31-32","61:40-45","61:51-69","62:6-26","62:41-45","62:52-69","63:7-27","63:37-37","63:42-46","63:54-69","64:7-27","64:37-37","64:43-48","64:55-69","65:7-25","65:37-37","65:44-49","65:55-70","66:7-23","66:37-37","66:46-50","66:55-71","66:73-75","67:7-22","67:36-38","67:47-52","67:55-62","67:67-67","67:73-75","68:7-22","68:36-38","68:48-50","68:52-53","68:55-60","68:62-62","68:67-75","69:6-21","69:26-27","69:36-38","69:49-49","69:56-60","69:67-75","70:6-21","70:36-37","70:49-50","70:57-61","70:68-75","71:6-21","71:50-50","71:58-61","71:68-75","72:7-21","72:49-49","72:58-62","72:67-75","73:7-20","73:43-49","73:58-62","73:68-75","74:7-19","74:44-47","74:59-61","74:68-75","75:7-18","75:45-47","75:59-60","75:69-75","76:47-47","76:60-61","76:70-74","77:72-73"]};
+</script>
+<script>
+(function (root) {
+  'use strict';
+  const MAXR = 20;
+  const REVEAL = [5, 10, 15, 20];
+  const KNOTEN = ['lis', 'mad', 'par', 'lon', 'fra', 'ber', 'mun', 'rom', 'wie', 'war', 'sto', 'ist', 'bud'];
+  const START_TICKETS = { R: 9, I: 5, N: 3, S: 5, D: 3 };
+  const DET_TICKETS = { R: 10, I: 3, N: 1 };
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function hashSeed(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+  function buildGraph(DATA) {
+    const G = { ids: DATA.st.map(s => s[0]), name: DATA.names, rail: {}, ferry: {}, cat: {}, dist: {}, edges: DATA.ed };
+    G.ids.forEach(i => { G.rail[i] = []; G.ferry[i] = []; });
+    DATA.ed.forEach(e => {
+      const t = e[0] === 'F' ? G.ferry : G.rail;
+      t[e[1]].push(e[2]); t[e[2]].push(e[1]);
+    });
+    G.ids.forEach(i => { G.cat[i] = KNOTEN.includes(i) ? 3 : (G.rail[i].length >= 3 ? 2 : 1); });
+    G.ids.forEach(s => {
+      const d = {}; d[s] = 0; const q = [s];
+      for (let k = 0; k < q.length; k++) { const u = q[k]; G.rail[u].forEach(v => { if (!(v in d)) { d[v] = d[u] + 1; q.push(v); } }); }
+      G.dist[s] = d;
+    });
+    return G;
+  }
+
+  const LIM = { R: [1, 1], I: [2, 2], N: [3, 3] };
+  function dests(G, from, type, blocked) {
+    blocked = blocked || new Set();
+    if (type === 'S') {
+      const out = [];
+      G.rail[from].forEach(v => { if (!blocked.has(v)) out.push(v); });
+      G.ferry[from].forEach(v => { if (!blocked.has(v) && !out.includes(v)) out.push(v); });
+      return out;
+    }
+    if (type === 'R') return G.rail[from].filter(v => !blocked.has(v));
+    const maxH = type === 'I' ? 2 : 3, minCat = type === 'I' ? 2 : 3;
+    const d = {}; d[from] = 0; const q = [from];
+    for (let k = 0; k < q.length; k++) {
+      const u = q[k]; if (d[u] >= maxH) continue;
+      G.rail[u].forEach(v => { if (!(v in d) && !blocked.has(v)) { d[v] = d[u] + 1; q.push(v); } });
+    }
+    return Object.keys(d).filter(v => v !== from && G.cat[v] >= minCat);
+  }
+
+  function shuffle(a, rng) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+  function newGame(G, seed, nDet) {
+    const rng = mulberry32(typeof seed === 'string' ? hashSeed(seed) : seed);
+    const ids = G.ids;
+    const pos = ids[Math.floor(rng() * ids.length)];
+    let goals = ids.filter(i => G.dist[pos][i] >= 6);
+    const goal = goals[Math.floor(rng() * goals.length)];
+    const dets = [];
+    const used = new Set([pos, goal]);
+    let pool = shuffle(ids.filter(i => G.dist[pos][i] >= 3), rng);
+    for (const c of pool) { if (dets.length >= nDet) break; if (used.has(c)) continue; if (dets.some(d => G.dist[d.pos][c] < 2)) continue; dets.push({ pos: c, t: Object.assign({}, DET_TICKETS) }); used.add(c); }
+    const detPos = new Set(dets.map(d => d.pos));
+    const P = new Set(ids.filter(i => !detPos.has(i)));
+    return { seed, rng, round: 1, pos, goal, start: pos, tickets: Object.assign({}, START_TICKETS), det: dets, P, lastKnown: null, track: [], trail: [pos], over: false, result: null, phase: 'player', maxr: MAXR };
+  }
+
+  function blockedSet(state) { return new Set(state.det.map(d => d.pos)); }
+
+  function legalMoves(G, state, type) {
+    if (type !== 'S' && state.tickets[type] <= 0) return [];
+    if (type === 'S' && state.tickets.S <= 0) return [];
+    return dests(G, state.pos, type, blockedSet(state));
+  }
+  function anyMove(G, state) { return ['R', 'I', 'N', 'S'].some(t => legalMoves(G, state, t).length > 0); }
+
+  // Spieler zieht. Gibt Ereignis zurueck.
+  function playerMove(G, state, type, dest, extra) {
+    const blocked = blockedSet(state);
+    state.tickets[type]--;
+    const entry = (extra && extra.second) ? state.track[state.track.length - 1] : { round: state.round, types: [] };
+    if (!(extra && extra.second)) state.track.push(entry);
+    entry.types.push(type);
+    // Belief: Detektive sehen nur Ticketart
+    state.P = expandBelief(G, state.P, type, blocked);
+    state.pos = dest; state.trail.push(dest);
+    if (dest === state.goal) { state.over = true; state.result = 'win'; return { goal: true }; }
+    return {};
+  }
+  function expandBelief(G, P, type, blocked) {
+    const out = new Set();
+    P.forEach(p => dests(G, p, type, blocked).forEach(d => out.add(d)));
+    return out;
+  }
+  function useDouble(state) { state.tickets.D--; }
+
+  function endPlayerTurn(G, state) {
+    const rev = REVEAL.includes(state.round);
+    if (rev) { state.P = new Set([state.pos]); state.lastKnown = { id: state.pos, round: state.round }; }
+    return rev;
+  }
+
+  // Detektive ziehen. Gibt Liste von Zuegen zurueck, setzt state.over bei Gefangennahme.
+  function detectivesTurn(G, state) {
+    const rng = state.rng; const moves = [];
+    const order = shuffle(state.det.map((_, i) => i), rng);
+    for (const i of order) {
+      const cur = state.det[i];
+      const others = state.det.filter((_, j) => j !== i).map(d => d.pos);
+      const blocked = new Set(others);
+      const Pn = [...state.P].filter(p => !others.includes(p));
+      const cands = [];
+      ['R', 'I', 'N'].forEach(t => { if (cur.t[t] > 0) dests(G, cur.pos, t, blocked).forEach(d => cands.push({ t, d })); });
+      if (!cands.length) { moves.push({ i, from: cur.pos, to: cur.pos, t: null }); continue; }
+      let best = null;
+      for (const c of cands) {
+        const S = others.concat([c.d]);
+        let sum = 0;
+        for (const q of Pn) { let m = 99; for (const s of S) { const dd = G.dist[s][q]; if (dd < m) m = dd; } sum += m; }
+        const avg = Pn.length ? sum / Pn.length : 0;
+        let cost = avg * 10 + (c.t === 'N' ? 0.9 : c.t === 'I' ? 0.35 : 0) + rng() * 1.2;
+        if (Pn.includes(c.d)) cost -= 400 / Math.max(1, Pn.length);
+        if (c.d === state.pos && state.P.size === 1) cost -= 1000;
+        if (!best || cost < best.cost) best = { cost, c };
+      }
+      cur.t[best.c.t]--; state.tickets[best.c.t]++;
+      const from = cur.pos; cur.pos = best.c.d;
+      moves.push({ i, from, to: cur.pos, t: best.c.t });
+      if (cur.pos === state.pos) { state.over = true; state.result = 'caught'; break; }
+      state.P.delete(cur.pos);
+    }
+    if (!state.over) {
+      state.det.forEach(d => state.P.delete(d.pos));
+      if (state.P.size === 0) { const dp = new Set(state.det.map(d => d.pos)); G.ids.forEach(i => { if (!dp.has(i)) state.P.add(i); }); }
+    }
+    return moves;
+  }
+
+  function nextRound(G, state) {
+    state.round++;
+    if (state.round > MAXR) { state.over = true; state.result = 'time'; return; }
+    if (!anyMove(G, state)) { state.over = true; state.result = 'stuck'; }
+  }
+
+  const api = { MAXR, REVEAL, KNOTEN, START_TICKETS, DET_TICKETS, mulberry32, hashSeed, buildGraph, dests, newGame, legalMoves, anyMove, playerMove, expandBelief, useDouble, endPlayerTurn, detectivesTurn, nextRound, blockedSet, shuffle };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.NZ = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function(){
+'use strict';
+const NZ=window.NZ, G=NZ.buildGraph(DATA);
+const SVGNS='http://www.w3.org/2000/svg';
+const $=id=>document.getElementById(id);
+const TNAME={R:'Regional',I:'Intercity',N:'Nachtzug',S:'Schwarz',D:'Doppelzug'};
+const TSUB={R:'1 Station',I:'bis 2 · Ring, Knoten',N:'bis 3 · Knoten',S:'verdeckt, Fähre',D:'2 Züge'};
+const TVAR={R:'--tR',I:'--tI',N:'--tN',S:'--tS',D:'--tD'};
+const SP={}; DATA.st.forEach(s=>{SP[s[0]]={x:(s[2]+.5)*5,y:(s[3]+.5)*5,lab:s[1],lx:s[4],ly:s[5],an:s[6]}});
+const nm=id=>G.name[id];
+let game=null, sel=null, armed=false, stage=0, busy=false, showBel=false, detShow=[], suppress=false, nDet=4;
+let V={x:0,y:0,w:380,h:391}; const VW=380, VH=391;
+const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+function el(n,a,p){const e=document.createElementNS(SVGNS,n);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+const sv=$('sv');
+let gLandEl,gEdges,gBel,gSt,gLab,gUL,gTrail,gMarks,gDet,gHint,detEls=[];
+function buildStatic(){
+  sv.innerHTML='';
+  el('rect',{x:-40,y:-40,width:VW+80,height:VH+80,style:'fill:var(--sea)'},sv);
+  const gl=el('g',{style:'fill:var(--land)','shape-rendering':'crispEdges'},sv);
+  DATA.land.forEach(t=>{const p=t.split(':'),b=p[1].split('-'),y=+p[0],x1=+b[0],x2=+b[1];el('rect',{x:x1*5,y:y*5,width:(x2-x1+1)*5+.3,height:5.3},gl)});
+  gEdges=el('g',{fill:'none','stroke-linejoin':'round','stroke-linecap':'round'},sv);
+  ['F','N'].forEach(k=>DATA.ed.filter(e=>e[0]===k).forEach(e=>{
+    el('polyline',k==='F'?{points:e[3],style:'stroke:var(--ferry)','stroke-width':1.8,'stroke-dasharray':'4 3'}:{points:e[3],style:'stroke:var(--rail)','stroke-width':1.8},gEdges)}));
+  gBel=el('g',{},sv); gTrail=el('g',{},sv);
+  gSt=el('g',{},sv);
+  DATA.st.forEach(s=>{const id=s[0],p=SP[id],c=G.cat[id];
+    if(c===1)el('circle',{cx:p.x,cy:p.y,r:2.7,style:'fill:var(--dotline)'},gSt);
+    else if(c===2)el('circle',{cx:p.x,cy:p.y,r:3.9,style:'fill:var(--dot);stroke:var(--dotline)','stroke-width':1.6},gSt);
+    else{el('circle',{cx:p.x,cy:p.y,r:4.8,style:'fill:var(--dotline)'},gSt);el('circle',{cx:p.x,cy:p.y,r:7.4,style:'fill:none;stroke:var(--dotline)','stroke-width':.9},gSt)}
+  });
+  gLab=el('g',{},sv); gUL=el('g',{},sv); gUL.style.display='none';
+  const ts='font-family:var(--font);font-size:11px;fill:var(--label);paint-order:stroke;stroke:var(--halo);stroke-width:3px;pointer-events:none';
+  DATA.st.forEach(s=>{const id=s[0],p=SP[id];
+    if(s[1]){const t=el('text',{x:p.lx,y:p.ly,'text-anchor':p.an,style:ts},gLab);t.textContent=s[1]}
+    else{const t=el('text',{x:p.x+7,y:p.y+4,style:ts},gUL);t.textContent=nm(id)}});
+  gMarks=el('g',{},sv); gDet=el('g',{},sv); gHint=el('g',{},sv); detEls=[];
+}
+function setView(x,y,w){w=Math.max(80,Math.min(VW,w));const h=w*VH/VW;x=Math.max(-12,Math.min(VW-w+12,x));y=Math.max(-12,Math.min(VH-h+12,y));V={x,y,w,h};sv.setAttribute('viewBox',x+' '+y+' '+w+' '+h);gUL.style.display=(VW/w>=2.2)?'':'none'}
+function zoomAt(cx,cy,f){const nw=Math.max(80,Math.min(VW,V.w*f));const s=nw/V.w;setView(cx-(cx-V.x)*s,cy-(cy-V.y)*s,nw)}
+function centerOn(id,w){const p=SP[id];w=w||V.w;const h=w*VH/VW;setView(p.x-w/2,p.y-h/2,w)}
+$('zin').onclick=()=>zoomAt(V.x+V.w/2,V.y+V.h/2,.65);
+$('zout').onclick=()=>zoomAt(V.x+V.w/2,V.y+V.h/2,1.5);
+$('zme').onclick=()=>{if(game){centerOn(game.pos,V.w>200?150:V.w)}};
+// Pan / Pinch
+const ptr=new Map(); let drag=0, pinch0=0;
+sv.addEventListener('pointerdown',e=>{ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});drag=0;if(ptr.size===2){const a=[...ptr.values()];pinch0=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}});
+sv.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId))return;const o=ptr.get(e.pointerId);const r=sv.getBoundingClientRect();
+  if(ptr.size===1){const dx=e.clientX-o.x,dy=e.clientY-o.y;drag+=Math.abs(dx)+Math.abs(dy);if(drag>8){if(!sv.hasPointerCapture(e.pointerId)){try{sv.setPointerCapture(e.pointerId)}catch(_){}}setView(V.x-dx*V.w/r.width,V.y-dy*V.h/r.height,V.w)}ptr.set(e.pointerId,{x:e.clientX,y:e.clientY})}
+  else if(ptr.size===2){ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});const a=[...ptr.values()];const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch0>0&&d>0){const mx=((a[0].x+a[1].x)/2-r.left)/r.width*V.w+V.x,my=((a[0].y+a[1].y)/2-r.top)/r.height*V.h+V.y;zoomAt(mx,my,pinch0/d);pinch0=d;drag=99}}});
+const up=e=>{ptr.delete(e.pointerId);if(drag>8){suppress=true;setTimeout(()=>suppress=false,80)}};
+sv.addEventListener('pointerup',up);sv.addEventListener('pointercancel',up);
+sv.addEventListener('wheel',e=>{e.preventDefault();const r=sv.getBoundingClientRect();const mx=(e.clientX-r.left)/r.width*V.w+V.x,my=(e.clientY-r.top)/r.height*V.h+V.y;zoomAt(mx,my,e.deltaY>0?1.15:.87)},{passive:false});
+
+// ---------- Rendering ----------
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function banner(t,ms){const b=$('banner');b.firstChild.textContent=t;b.classList.add('show');if(ms)setTimeout(()=>b.classList.remove('show'),ms)}
+function msg(t){$('msg').textContent=t}
+function renderHud(){
+  $('rnd').innerHTML='Runde '+Math.min(game.round,game.maxr)+'<small>von '+game.maxr+'</small>';
+  $('goal').innerHTML='Ziel<b>'+nm(game.goal)+'</b>';
+  const nextRev=NZ.REVEAL.find(r=>r>=game.round);
+  $('pips').innerHTML=NZ.REVEAL.map(r=>'<i class="'+(r<game.round?'pass':'')+(r===nextRev?' next':'')+'" title="Aufdeckung in Runde '+r+'"></i>').join('');
+}
+function renderTickets(){
+  const T=$('tickets');T.innerHTML='';
+  ['R','I','N','S','D'].forEach(t=>{
+    const b=document.createElement('button');b.className='tk'+((sel===t||(t==='D'&&armed))?' on':'');b.style.setProperty('--c','var('+TVAR[t]+')');
+    const cnt=game.tickets[t];
+    let dis=busy||game.over||cnt<=0;
+    if(!dis&&t!=='D'&&NZ.legalMoves(G,game,t).length===0)dis=true;
+    if(t==='D'&&(stage===1||!NZ.anyMove(G,game)))dis=true;
+    b.disabled=dis;
+    b.innerHTML='<b>'+TNAME[t]+'</b><span class="n">'+cnt+'</span><small>'+TSUB[t]+'</small>';
+    b.onclick=()=>pick(t);
+    T.appendChild(b);
+  });
+}
+function renderChips(){
+  const C=$('chips');C.innerHTML='';
+  if(!sel||busy||game.over)return;
+  const ds=NZ.legalMoves(G,game,sel).sort((a,b)=>nm(a).localeCompare(nm(b),'de'));
+  ds.forEach(d=>{const b=document.createElement('button');const c=G.cat[d];b.textContent=(c===3?'● ':c===2?'○ ':'· ')+nm(d)+(G.ferry[game.pos].includes(d)?' (Fähre)':'');b.onclick=()=>{if(!suppress)move(d)};C.appendChild(b)});
+}
+function renderTrack(){
+  const T=$('track');T.innerHTML='';
+  for(let r=1;r<=game.maxr;r++){
+    const d=document.createElement('div');const tr=game.track.find(x=>x.round===r);
+    if(NZ.REVEAL.includes(r))d.className='rev';
+    if(r===game.round&&!game.over)d.className+=' cur';
+    if(tr)d.innerHTML=tr.types.map(t=>'<span style="--c:var('+TVAR[t]+')">'+t+'</span>').join('');else d.textContent=r;
+    T.appendChild(d);
+  }
+}
+function renderMarks(){
+  gMarks.innerHTML='';gTrail.innerHTML='';gBel.innerHTML='';
+  if(showBel)game.P.forEach(id=>{const p=SP[id];el('circle',{cx:p.x,cy:p.y,r:7,style:'fill:var(--det);opacity:.28'},gBel)});
+  game.trail.slice(0,-1).forEach(id=>{const p=SP[id];el('circle',{cx:p.x,cy:p.y,r:2,style:'fill:var(--me);opacity:.55'},gTrail)});
+  const g=SP[game.goal];
+  el('polygon',{points:(g.x)+','+(g.y-9)+' '+(g.x+7)+','+g.y+' '+g.x+','+(g.y+9)+' '+(g.x-7)+','+g.y,style:'fill:var(--goal);stroke:var(--panel)','stroke-width':1.2},gMarks);
+  if(!SP[game.goal].lab){const t=el('text',{x:g.x+9,y:g.y-6,style:'font-family:var(--font);font-size:11px;font-weight:700;fill:var(--label);paint-order:stroke;stroke:var(--halo);stroke-width:3px'},gMarks);t.textContent=nm(game.goal)}
+  if(game.lastKnown){const p=SP[game.lastKnown.id];el('circle',{cx:p.x,cy:p.y,r:10,style:'fill:none;stroke:var(--det)','stroke-width':1.6,'stroke-dasharray':'3 2'},gMarks);const t=el('text',{x:p.x+11,y:p.y+14,style:'font-family:var(--font);font-size:10px;fill:var(--det);font-weight:700;paint-order:stroke;stroke:var(--halo);stroke-width:2.5px'},gMarks);t.textContent='R'+game.lastKnown.round}
+  if(detEls.length!==detShow.length){gDet.innerHTML='';detEls=detShow.map(id=>{const p=SP[id];const gg=el('g',{class:'det',style:'transform:translate('+p.x+'px,'+p.y+'px)'},gDet);
+    el('circle',{r:6,class:'pulse',style:'fill:none;stroke:var(--det)','stroke-width':2},gg);
+    el('rect',{x:-6.5,y:-6.5,width:13,height:13,rx:1.5,style:'fill:var(--det);stroke:var(--detline)','stroke-width':1.6},gg);
+    const t=el('text',{x:0,y:3.6,'text-anchor':'middle',style:'font-family:var(--font);font-size:10px;font-weight:700;fill:#fff;pointer-events:none'},gg);t.textContent='D';return gg})}
+  detShow.forEach((id,i)=>{const p=SP[id];detEls[i].style.transform='translate('+p.x+'px,'+p.y+'px)'});
+  const m=SP[game.pos];
+  el('circle',{cx:m.x,cy:m.y,r:6,class:'pulse',style:'fill:none;stroke:var(--me)','stroke-width':1.6},gMarks);
+  el('circle',{cx:m.x,cy:m.y,r:5.4,style:'fill:var(--me);stroke:var(--meline)','stroke-width':1.8},gMarks);
+  renderHints();
+}
+function renderHints(){
+  gHint.innerHTML='';
+  if(!sel||busy||game.over)return;
+  NZ.legalMoves(G,game,sel).forEach(d=>{const p=SP[d];
+    el('circle',{cx:p.x,cy:p.y,r:8.2,style:'fill:var(--hint);fill-opacity:.2;stroke:var(--hint)','stroke-width':2.3,'pointer-events':'none'},gHint);
+    const h=el('circle',{cx:p.x,cy:p.y,r:11,fill:'transparent',style:'cursor:pointer'},gHint);
+    h.addEventListener('click',()=>{if(!suppress)move(d)});
+    if(!SP[d].lab){const t=el('text',{x:p.x+10,y:p.y+4,style:'font-family:var(--font);font-size:11px;font-weight:700;fill:var(--label);paint-order:stroke;stroke:var(--halo);stroke-width:3px;pointer-events:none'},gHint);t.textContent=nm(d)}
+  });
+}
+function renderAll(){renderHud();renderTickets();renderChips();renderTrack();renderMarks()}
+
+// ---------- Spielfluss ----------
+function pick(t){
+  if(busy||game.over)return;
+  if(t==='D'){if(stage===1)return;armed=!armed;sel=null;msg(armed?'Doppelzug aktiv: Wähle Ticket und Ziel für die erste Etappe.':'Doppelzug abgebrochen.');renderAll();return}
+  sel=(sel===t)?null:t;
+  if(sel){const n=NZ.legalMoves(G,game,sel).length;msg(TNAME[sel]+': '+n+' mögliche Ziele. Tippe eins auf der Karte oder in der Liste.')}else msg(stage?'Zweite Etappe: Wähle ein Ticket.':'Wähle ein Ticket.');
+  renderAll();
+}
+async function move(dest){
+  if(busy||game.over||!sel)return;
+  const t=sel;
+  const second=(stage===1);
+  const ev=NZ.playerMove(G,game,t,dest,{second});
+  if(armed&&!second){NZ.useDouble(game);stage=1;sel=null;if(!NZ.anyMove(G,game)){armed=false;stage=0;await endTurn();return}msg('Doppelzug: Wähle Ticket und Ziel für die zweite Etappe.');renderAll();centerIfZoomed();return}
+  sel=null;
+  if(game.over){await finish();return}
+  armed=false;stage=0;
+  await endTurn();
+}
+function centerIfZoomed(){if(V.w<VW*.95)centerOn(game.pos,V.w)}
+async function endTurn(){
+  busy=true;renderAll();
+  const rev=NZ.endPlayerTurn(G,game);
+  if(rev){banner('Aufdeckung: Die Detektive sehen dich',1400);msg('Aufgedeckt! Die Detektive wissen jetzt, wo du bist.');renderAll();await sleep(1500)}
+  else{banner('Detektive ziehen …');renderAll();await sleep(350)}
+  const moves=NZ.detectivesTurn(G,game);
+  for(const m of moves){detShow[m.i]=m.to;renderMarks();if(m.t)await sleep(420)}
+  $('banner').classList.remove('show');
+  if(game.over){await finish();return}
+  NZ.nextRound(G,game);
+  if(game.over){await finish();return}
+  busy=false;
+  const nr=NZ.REVEAL.includes(game.round);
+  msg(nr?'Achtung: Nach deinem Zug in dieser Runde wirst du aufgedeckt. Wähle ein Ticket.':'Wähle ein Ticket.');
+  renderAll();centerIfZoomed();
+}
+async function finish(){
+  busy=true;$('banner').classList.remove('show');renderAll();
+  const st=store.get('nz-stats',{played:0,wins:0});st.played++;if(game.result==='win')st.wins++;store.set('nz-stats',st);
+  await sleep(700);
+  showEnd(st);
+}
+function startGame(seed){
+  game=NZ.newGame(G,seed,nDet);sel=null;armed=false;stage=0;busy=false;
+  detShow=game.det.map(d=>d.pos);
+  buildStatic();setView(0,0,VW);renderAll();
+  msg('Wähle ein Ticket. Dein Ziel ist '+nm(game.goal)+'.');
+  $('ov').classList.add('hide');
+}
+function symbol(c){return c===3?'<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="5" fill="currentColor"/><circle cx="10" cy="10" r="8.4" fill="none" stroke="currentColor"/></svg>':c===2?'<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>':'<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="3.2" fill="currentColor"/></svg>'}
+function showEnd(st){
+  const R=game.result;
+  const T={win:['Geschafft','Du hast '+nm(game.goal)+' in Runde '+game.round+' erreicht, ohne gestellt zu werden.'],
+    caught:['Gestellt','Ein Detektiv hat dich in '+nm(game.pos)+' erwischt (Runde '+game.round+').'],
+    time:['Zeit abgelaufen','Nach '+game.maxr+' Runden warst du nicht in '+nm(game.goal)+'.'],
+    stuck:['Festgefahren','Dir blieb kein Ticket für eine mögliche Fahrt.']}[R];
+  $('card').innerHTML='<h2>'+T[0]+'</h2><p>'+T[1]+'</p><p style="color:var(--muted);font-size:13px">Bisher '+st.wins+' von '+st.played+' Partien gewonnen.</p>'+
+   '<div class="row"><button class="go" id="again">Neue Partie</button><button id="view">Karte ansehen</button></div>';
+  $('ov').classList.remove('hide');
+  $('again').onclick=()=>startGame('r'+Math.random());
+  $('view').onclick=()=>{$('ov').classList.add('hide');msg('Partie beendet. Menü öffnet eine neue Partie.')};
+}
+function showMenu(first){
+  const th=document.body.dataset.theme;
+  const dl={3:'Leicht (3 Detektive)',4:'Normal (4 Detektive)',5:'Schwer (5 Detektive)'};
+  const logosHTML='<div style="display:flex;gap:12px;margin:0 0 16px;justify-content:center;flex-wrap:wrap"><svg width="90" height="90" viewBox="0 0 100 100" style="border-radius:14px;background:#14213D"><rect width="100" height="100" fill="#14213D"/><rect x="16" y="38" width="68" height="64" fill="#EFE6CF"/><circle cx="32" cy="52" r="6" fill="#14213D"/><circle cx="68" cy="52" r="6" fill="#14213D"/><circle cx="32" cy="72" r="6" fill="#14213D"/><circle cx="68" cy="72" r="6" fill="#14213D"/></svg><svg width="90" height="90" viewBox="0 0 100 100" style="border-radius:14px;background:#f9f9f9;border:2px solid #e0e0e0"><g style="transform:translate(0,0)"><rect x="25" y="15" width="50" height="65" rx="2" fill="#f5f5f5" stroke="#999" stroke-width="1"/><rect x="27" y="17" width="46" height="8" fill="#d0d0d0"/><line x1="29" y1="27" x2="71" y2="27" stroke="#ccc" stroke-width="1.2"/><line x1="29" y1="32" x2="71" y2="32" stroke="#ccc" stroke-width="1.2"/><line x1="29" y1="37" x2="71" y2="37" stroke="#ccc" stroke-width="1.2"/><line x1="29" y1="42" x2="71" y2="42" stroke="#ccc" stroke-width="1.2"/><line x1="29" y1="47" x2="71" y2="47" stroke="#ccc" stroke-width="1.2"/><line x1="29" y1="52" x2="71" y2="52" stroke="#ccc" stroke-width="1.2"/><line x1="29" y1="57" x2="71" y2="57" stroke="#ccc" stroke-width="1.2"/><path d="M50 10 L44 2 L56 2 Z" fill="#222"/></g></svg></div>';
+  $('card').innerHTML=logosHTML+'<h1>Nachtzug</h1><p>Du bist der Flüchtende. Erreiche dein geheimes Ziel in Europa, bevor dich die Detektive stellen.</p>'+
+   '<ul><li><b>Stationen</b> bestimmen, womit du wo ankommst. Ein Regionalzug fährt eine Station weit und hält überall.</li>'+
+   '<li>Der <b>Intercity</b> fährt bis zu zwei Stationen und hält nur an Ring und Knoten, der <b>Nachtzug</b> bis zu drei und hält nur am Knoten.</li>'+
+   '<li>Die Detektive sehen nur, welches Ticket du benutzt hast. Du wirst in Runde 5, 10, 15 und 20 aufgedeckt.</li>'+
+   '<li><b>Schwarz</b> versteckt die Zugart und erlaubt als Einziges Fähren. Der <b>Doppelzug</b> gibt zwei Etappen in einer Runde.</li>'+
+   '<li>Tickets, die Detektive ausgeben, bekommst du.</li></ul>'+
+   '<div class="legend"><span style="color:var(--ink)">'+symbol(1)+'Halt</span><span style="color:var(--ink)">'+symbol(2)+'Fernbahnhof</span><span style="color:var(--ink)">'+symbol(3)+'Knoten</span></div>'+
+   '<div class="lab">Schwierigkeit</div><div class="row" id="dif">'+[3,4,5].map(n=>'<button data-n="'+n+'" class="'+(n===nDet?'on':'')+'">'+dl[n]+'</button>').join('')+'</div>'+
+   '<div class="row"><button class="go" id="daily">Tagesrätsel</button><button class="go" id="rand">Zufällige Partie</button></div>'+
+   (first?'':'<div class="row"><button id="cont">Zurück zur Partie</button></div>');
+  $('ov').classList.remove('hide');
+  document.querySelectorAll('#dif button').forEach(b=>b.onclick=()=>{nDet=+b.dataset.n;store.set('nz-det',nDet);document.querySelectorAll('#dif button').forEach(x=>x.classList.toggle('on',x===b))});
+  $('daily').onclick=()=>startGame('tag-'+new Date().toISOString().slice(0,10)+'-'+nDet);
+  $('rand').onclick=()=>startGame('r'+Math.random());
+  if($('cont'))$('cont').onclick=()=>$('ov').classList.add('hide');
+}
+$('bMenu').onclick=()=>showMenu(false);
+$('bBel').onclick=()=>{showBel=!showBel;$('bBel').classList.toggle('on',showBel);$('bBel').setAttribute('aria-pressed',showBel);$('bBel').textContent=showBel?'Verdacht verbergen':'Verdacht zeigen';if(game)renderMarks()};
+document.querySelectorAll('#themes button').forEach(b=>b.onclick=()=>setTheme(b.dataset.th));
+function setTheme(t){document.body.dataset.theme=t;store.set('nz-theme',t);document.querySelectorAll('#themes button').forEach(b=>b.classList.toggle('on',b.dataset.th===t));const m=document.querySelector('meta[name=theme-color]');m.content={hell:'#F4F1EA',gelb:'#F5D33F',nacht:'#14110A'}[t]}
+nDet=store.get('nz-det',4);setTheme(store.get('nz-theme',(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'nacht':'hell'));
+game=NZ.newGame(G,'start',nDet);detShow=game.det.map(d=>d.pos);buildStatic();setView(0,0,VW);renderAll();
+showMenu(true);
+})();
+</script>
+</body>
+</html>
